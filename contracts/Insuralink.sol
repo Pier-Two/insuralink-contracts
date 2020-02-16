@@ -31,8 +31,8 @@ contract Insuralink is ChainlinkClient, Ownable {
   uint256 public activeCounter;
   mapping (uint256 => InsuranceContractTemplate) public contractTemplates;
   mapping (uint256 => InsuranceContract) public activeContracts;
-  mapping (address => uint256[]) templatesByUser;
-  mapping (address => uint256[]) activeContractsByUser;
+  mapping (address => uint256[]) public templatesByUser;
+  mapping (address => uint256[]) public activeContractsByUser;
 
   /**
    * @notice Deploy the contract with a specified address for the LINK
@@ -50,15 +50,15 @@ contract Insuralink is ChainlinkClient, Ownable {
 
     DAI = IERC20(daiToken);
     //TODO
-    setChainlinkOracle(address(0));
+    // setChainlinkOracle(address(0));
   }
 
-  function createInsuranceContractTemplate(uint256 paymentFrequency, uint256 paymentAmount, uint256 insuranceAmount, uint256 length,
+  function createInsuranceContractTemplate(uint256 paymentAmount, uint256 insuranceAmount, uint256 length,
     string memory description, uint256 totalNumberOfPayments) public returns(uint256) {
       //Ensure DAI is deposited on creation
       require(DAI.transferFrom(msg.sender, address(this), insuranceAmount));
       uint256 validUntil = now + (length * (1 minutes));
-      InsuranceContractTemplate memory template = InsuranceContractTemplate(msg.sender, paymentFrequency, 
+      InsuranceContractTemplate memory template = InsuranceContractTemplate(msg.sender, 1, 
         paymentAmount, totalNumberOfPayments, insuranceAmount, validUntil, description, templateCounter);
       contractTemplates[templateCounter] = template;
       templatesByUser[msg.sender].push(template.id);
@@ -88,7 +88,10 @@ contract Insuralink is ChainlinkClient, Ownable {
     require(DAI.transfer(insuranceContract.buyer, insuranceContract.contractTemplate.insuranceAmount));
     activeContracts[contractId].valid = false;
   }
-
+  
+  /**
+  * Function to allow the user to pay their premium on the contract
+  */
   function payPremium(uint256 contractId) public returns(bool) {
     InsuranceContract memory insuranceContract = activeContracts[contractId];
     require(insuranceContract.valid && msg.sender == insuranceContract.buyer);
@@ -110,6 +113,17 @@ contract Insuralink is ChainlinkClient, Ownable {
     InsuranceContractTemplate memory template = activeContracts[contractId].contractTemplate;
     return (template.seller, template.paymentFrequency, template.paymentAmount, template.insuranceAmount,
       template.validUntil, template.description, template.id);
+  }
+
+  function getContractTemplate(uint256 templateId) public view returns(address, uint256, uint256, uint256,
+      uint256, string, uint256){
+    InsuranceContractTemplate memory template = contractTemplates[templateId];
+    return (template.seller, template.paymentFrequency, template.paymentAmount, template.insuranceAmount,
+      template.validUntil, template.description, template.id);
+  }
+
+  function getActiveContractsByUser(address user) public view returns(uint256[]) {
+    return activeContractsByUser[user];
   }
 
   //TODO

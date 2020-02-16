@@ -1,5 +1,6 @@
 const HDWalletProvider = require('truffle-hdwallet-provider')
-
+const mnemonic = "lyrics various math speak almost tonight license crash whisper flush gossip knee"
+const RPC = "https://ropsten.infura.io/v3/4c85724d14d44bd0a579811c1e467d38"
 module.exports = {
 
   plugins: ["truffle-security"],
